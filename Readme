@@ -1,0 +1,32 @@
+python3 -m venv venv
+yolo detect predict model=yolov8n.pt source=0 show=true
+pip install supervision==0.3.0
+
+pip uninstall opencv-python 
+pip install opencv-python
+python -m pip install pip==21.1.1
+
+
+""" with app.app_context():
+    db.create_all() """
+
+
+
+
+
+
+
+
+
+
+
+    while True:
+        debounce = False
+        if keyboard.is_pressed('a') and debounce == False:
+            debounce = True
+            tcash = 10*50
+            new_task = Sales(cash=tcash)
+            db.session.add(new_task)
+            db.session.commit()
+            time.sleep(3)
+            debounce = False
