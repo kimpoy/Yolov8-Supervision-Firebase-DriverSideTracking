@@ -5,30 +5,30 @@ from ultralytics import YOLO
 import supervision as sv
 import numpy as np
 from flask import Flask, render_template,url_for,request,redirect
-from flask_sqlalchemy import SQLAlchemy
-import keyboard
-import time
+
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+
+# Initialize Firebase with the credentials JSON file
+cred = credentials.Certificate("iot-project-6b313-firebase-adminsdk-l3dnb-b8239e308b.json")
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://iot-project-6b313-default-rtdb.firebaseio.com/'
+})
+
+# Get a reference to the Firebase Realtime Database
+ref = db.reference('/Counter')
+
+
+# Update
+def update_data(data_id, updated_data):
+    ref.child(data_id).update(updated_data)
+
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SECRET_KEY'] = ['KIM']
 
-db = SQLAlchemy(app)
 
-class Users(db.Model):
-    id = db.Column(db.Integer,primary_key=True)
-    username = db.Column(db.String(200),nullable=False)
-    password = db.Column(db.String(200),nullable=False)
-    def __repr__(self):
-        return '<ID %r>' % self.id
-    
-class Sales(db.Model):
-    id = db.Column(db.Integer,primary_key=True)
-    cash = db.Column(db.Integer)
-    def __repr__(self):
-        return '<ID %r>' % self.id
-""" with app.app_context():
-    db.create_all() """
 
 ZONE_POLYGON = np.array([
     [0,0],
@@ -113,6 +113,11 @@ def main():
         cv2.rectangle(counter_frame, (x, x), (x + w, y + h), (0,0,0), -1)
         cv2.putText(counter_frame, f'Total:{total}', (x + int(w/10),y + int(h) - int(h/3)), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 4)
 
+        # Update data
+        data_id = "-NzdK5eOSWNahdBKg3EP"  # Replace <data_id> with the ID of the data you want to update
+        updated_data = {"Counter": total}
+        update_data(data_id, updated_data)
+
         total_passenger = total
         
         yield frame
@@ -144,30 +149,6 @@ def webapp():
     #return Response(generate_frames(path_x = session.get('video_path', None),conf_=round(float(session.get('conf_', None))/100,2)),mimetype='multipart/x-mixed-replace; boundary=frame')
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/save')
-def save():
-    price = 100
-    discount = 20
-    discounted_price = price - (100 * .2)
-    discounted_passenger = 0
-    while True:
-        
-        if keyboard.is_pressed('a'):
-            print("Key pressed")
-            if total_passenger >= 1:
-                normal_fare_passenger = total_passenger - discounted_passenger
-                tcash = (discounted_passenger * discounted_price) + (normal_fare_passenger * price)
-                new_task = Sales(cash=tcash)
-                db.session.add(new_task)
-                db.session.commit()
-                discounted_passenger = 0
-                time.sleep(3)
-        if keyboard.is_pressed('s') and not total_passenger > 4:
-            discounted_passenger += 1
-            time.sleep(3)
-        else:
-            time.sleep(0.01)
-    
 if __name__ == "__main__":
     #app.run(debug=True)
     app.run(host='0.0.0.0', port=5000, threaded=True)

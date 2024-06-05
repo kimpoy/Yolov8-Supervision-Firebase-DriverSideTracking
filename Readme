@@ -1,6 +1,7 @@
 python3 -m venv venv
 yolo detect predict model=yolov8n.pt source=0 show=true
 pip install supervision==0.3.0
+pip install firebase-admin
 
 pip uninstall opencv-python 
 pip install opencv-python
